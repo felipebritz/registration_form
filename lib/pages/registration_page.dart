@@ -3,14 +3,21 @@ import 'package:cnpj_cpf_helper/cnpj_cpf_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
-import 'package:registration_form/models/user_model.dart';
+import 'package:registration_form/intra/db_sqlite.dart';
+import 'package:registration_form/models/user.dart';
+import 'package:registration_form/repositories/user_repository.dart';
 
 class RegistrationPage extends StatefulWidget {
+  final User user;
+  const RegistrationPage({Key key, this.user}) : super(key: key);
+
   @override
   _RegistrationPageState createState() => _RegistrationPageState();
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
+  var repository = UserRepository(DBSQLite());
+
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
 
@@ -21,31 +28,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final _stateController = TextEditingController();
   final _countryController = TextEditingController();
 
-  var user = User();
+  @override
+  void initState() {
+    _cepController.text = widget.user.cep;
+    _streetController.text = widget.user.street;
+    _districtController.text = widget.user.district;
+    _cityController.text = widget.user.city;
+    _stateController.text = widget.user.state;
+    _countryController.text = widget.user.country;
 
-  void searchCep() async {
-    try {
-      Response response = await Dio()
-          .get("http://viacep.com.br/ws/${_cepController.text}/json/");
-      var json = jsonDecode(response.toString());
-      print(json);
-      _streetController.text = json['logradouro'];
-      _districtController.text = json['bairro'];
-      _cityController.text = json['localidade'];
-      _stateController.text = json['uf'];
-      _countryController.text = 'BR';
-    } catch (e) {
-      _streetController.text = '';
-      _districtController.text = '';
-      _cityController.text = '';
-      _stateController.text = '';
-      _countryController.text = '';
-      _scaffoldKey.currentState.showSnackBar(
-        SnackBar(
-          content: Text('CEP Inválido'),
-        ),
-      );
-    }
+    super.initState();
   }
 
   @override
@@ -53,7 +45,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Colors.red,
         title: Text('Formulário de cadastro'),
         centerTitle: true,
       ),
@@ -70,17 +61,24 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     children: [
                       customTextFormField(
                         'Nome completo',
-                        onSaved: (value) => user.name = value,
+                        initialValue: widget.user.name,
+                        validator: _isEmptyValidator,
+                        onSaved: (value) => widget.user.name = value,
                       ),
                       SizedBox(height: 10),
-                      customTextFormFieldEmail(
-                        'Email',
-                        onSaved: (value) => user.email = value,
+                      customTextFormField(
+                        'E-mail',
+                        initialValue: widget.user.email,
+                        validator: _isEmailValidator,
+                        onSaved: (value) => widget.user.email = value,
                       ),
                       SizedBox(height: 10),
-                      customTextFormFieldCFP(
+                      customTextFormField(
                         'CPF',
-                        onSaved: (value) => user.cpf = value,
+                        initialValue: widget.user.cpf,
+                        keyboardType: TextInputType.number,
+                        validator: _isCpfValidator,
+                        onSaved: (value) => widget.user.cpf = value,
                       ),
                       SizedBox(height: 10),
                       Row(
@@ -91,7 +89,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                               'CEP',
                               controller: _cepController,
                               keyboardType: TextInputType.number,
-                              onSaved: (value) => user.cep = value,
+                              validator: _isEmptyValidator,
+                              onSaved: (value) => widget.user.cep = value,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -110,7 +109,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             child: customTextFormField(
                               'Rua',
                               controller: _streetController,
-                              onSaved: (value) => user.street = value,
+                              validator: _isEmptyValidator,
+                              onSaved: (value) => widget.user.street = value,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -118,8 +118,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             flex: 1,
                             child: customTextFormField(
                               'Número',
+                              initialValue: widget.user.number?.toString(),
                               keyboardType: TextInputType.number,
-                              onSaved: (value) => user.number = value,
+                              validator: _isEmptyValidator,
+                              onSaved: (value) =>
+                                  widget.user.number = int.tryParse(value),
                             ),
                           ),
                         ],
@@ -132,7 +135,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             child: customTextFormField(
                               'Bairro',
                               controller: _districtController,
-                              onSaved: (value) => user.district = value,
+                              validator: _isEmptyValidator,
+                              onSaved: (value) => widget.user.district = value,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -141,7 +145,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             child: customTextFormField(
                               'Cidade',
                               controller: _cityController,
-                              onSaved: (value) => user.city = value,
+                              validator: _isEmptyValidator,
+                              onSaved: (value) => widget.user.city = value,
                             ),
                           ),
                         ],
@@ -154,7 +159,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             child: customTextFormField(
                               'UF',
                               controller: _stateController,
-                              onSaved: (value) => user.state = value,
+                              validator: _isEmptyValidator,
+                              onSaved: (value) => widget.user.state = value,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -163,7 +169,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             child: customTextFormField(
                               'País',
                               controller: _countryController,
-                              onSaved: (value) => user.country = value,
+                              validator: _isEmptyValidator,
+                              onSaved: (value) => widget.user.country = value,
                             ),
                           ),
                         ],
@@ -182,11 +189,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 child: OutlineButton(
                   borderSide: BorderSide(color: Colors.red),
                   textColor: Colors.red,
-                  child: Text('Cadastrar'),
+                  child: Text('Salvar'),
                   onPressed: () {
                     if (_formKey.currentState.validate()) {
                       _formKey.currentState.save();
-                      _showRegistry(ctx, user);
+                      repository
+                          .saveUser(widget.user)
+                          .then((value) => widget.user.id ??= value);
+                      _showRegistry(ctx, widget.user);
                     } else {
                       Scaffold.of(ctx).showSnackBar(
                           SnackBar(content: Text('Formulário Inválido')));
@@ -201,58 +211,21 @@ class _RegistrationPageState extends State<RegistrationPage> {
     );
   }
 
-  String _isEmptyValidator(String value) {
-    if (value.isEmpty) {
-      return 'Campo obrigatório.';
-    }
-    return null;
-  }
-
   Widget customTextFormField(String label,
       {TextInputType keyboardType = TextInputType.text,
       TextEditingController controller,
+      String initialValue,
+      String Function(String) validator,
       Function(String) onSaved}) {
     return TextFormField(
+      initialValue: initialValue,
       keyboardType: keyboardType,
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(),
       ),
-      validator: _isEmptyValidator,
-      onSaved: onSaved,
-    );
-  }
-
-  Widget customTextFormFieldEmail(String label, {Function(String) onSaved}) {
-    return TextFormField(
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(),
-      ),
-      validator: (value) {
-        if (EmailValidator.validate(value)) {
-          return null;
-        }
-        return 'Email inválido';
-      },
-      onSaved: onSaved,
-    );
-  }
-
-  Widget customTextFormFieldCFP(String label, {Function(String) onSaved}) {
-    return TextFormField(
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(),
-      ),
-      validator: (value) {
-        if (CnpjCpfBase.isCpfValid(value)) {
-          return null;
-        }
-        return 'CPF inválido';
-      },
+      validator: validator,
       onSaved: onSaved,
     );
   }
@@ -279,8 +252,64 @@ class _RegistrationPageState extends State<RegistrationPage> {
               Text('País: ${user.country}'),
             ],
           ),
+          actions: [
+            FlatButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Voltar')),
+            FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(user);
+                },
+                child: Text('Concluir')),
+          ],
         );
       },
     );
+  }
+
+  String _isEmptyValidator(String value) {
+    if (value.isEmpty) {
+      return 'Campo obrigatório.';
+    }
+    return null;
+  }
+
+  String _isCpfValidator(String value) {
+    if (CnpjCpfBase.isCpfValid(value)) {
+      return null;
+    }
+    return 'CPF inválido';
+  }
+
+  String _isEmailValidator(String value) {
+    if (EmailValidator.validate(value)) {
+      return null;
+    }
+    return 'Email inválido';
+  }
+
+  void searchCep() async {
+    try {
+      Response response = await Dio()
+          .get("http://viacep.com.br/ws/${_cepController.text}/json/");
+      var json = jsonDecode(response.toString());
+      _streetController.text = json['logradouro'];
+      _districtController.text = json['bairro'];
+      _cityController.text = json['localidade'];
+      _stateController.text = json['uf'];
+      _countryController.text = 'BR';
+    } catch (e) {
+      _streetController.text = '';
+      _districtController.text = '';
+      _cityController.text = '';
+      _stateController.text = '';
+      _countryController.text = '';
+      _scaffoldKey.currentState.showSnackBar(
+        SnackBar(
+          content: Text('CEP Inválido'),
+        ),
+      );
+    }
   }
 }
