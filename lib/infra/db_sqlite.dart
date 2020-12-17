@@ -36,7 +36,8 @@ class DBSQLite {
             district TEXT,
             city TEXT,
             state TEXT,
-            country TEXT
+            country TEXT,
+            image TEXT
           );
         ''');
       }

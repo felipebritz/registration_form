@@ -10,6 +10,7 @@ class User {
   String city;
   String state;
   String country;
+  String image;
 
   User({
     this.id,
@@ -23,6 +24,7 @@ class User {
     this.city,
     this.state,
     this.country,
+    this.image,
   });
 
   User.fromMap(Map<String, dynamic> user) {
@@ -37,6 +39,7 @@ class User {
     city = user['city'];
     state = user['state'];
     country = user['country'];
+    image = user['image'];
   }
 
   Map<String, dynamic> toMap() => {
@@ -50,10 +53,11 @@ class User {
         'city': city,
         'state': state,
         'country': country,
+        'image': image
       };
 
   @override
   String toString() {
-    return '$name, $email, $cpf, $cep, $street, $number, $district, $city, $state, $country';
+    return '$name, $email, $cpf, $cep, $street, $number, $district, $city, $state, $country, $image';
   }
 }

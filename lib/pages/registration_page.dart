@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:cnpj_cpf_helper/cnpj_cpf_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
-import 'package:registration_form/intra/db_sqlite.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:registration_form/infra/db_sqlite.dart';
 import 'package:registration_form/models/user.dart';
 import 'package:registration_form/repositories/user_repository.dart';
 
@@ -28,6 +30,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final _stateController = TextEditingController();
   final _countryController = TextEditingController();
 
+  String _image;
+
   @override
   void initState() {
     _cepController.text = widget.user.cep;
@@ -36,7 +40,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     _cityController.text = widget.user.city;
     _stateController.text = widget.user.state;
     _countryController.text = widget.user.country;
-
+    _image = widget.user.image;
     super.initState();
   }
 
@@ -59,6 +63,35 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   padding: EdgeInsets.all(10),
                   child: Column(
                     children: [
+                      GestureDetector(
+                        onTap: _getImage,
+                        child: CircleAvatar(
+                          radius: 70,
+                          backgroundImage: _image != null ? FileImage(File(_image)) : null,
+                          backgroundColor: _image == null ? Colors.grey[300] : null,
+                          child: _image == null
+                              ? Stack(
+                                  children: [
+                                    Icon(
+                                      Icons.person,
+                                      color: Colors.grey,
+                                      size: 70,
+                                    ),
+                                    Positioned(
+                                      right: 0,
+                                      top: 20.0,
+                                      child: Icon(
+                                        Icons.camera_alt,
+                                        color: Colors.grey,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : null,
+                        ),
+                      ),
+                      SizedBox(height: 10),
                       customTextFormField(
                         'Nome completo',
                         initialValue: widget.user.name,
@@ -193,6 +226,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   onPressed: () {
                     if (_formKey.currentState.validate()) {
                       _formKey.currentState.save();
+                      widget.user.image = _image;
                       repository
                           .saveUser(widget.user)
                           .then((value) => widget.user.id ??= value);
@@ -310,6 +344,17 @@ class _RegistrationPageState extends State<RegistrationPage> {
           content: Text('CEP Inválido'),
         ),
       );
+    }
+  }
+
+  Future _getImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.getImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      setState(() {
+        _image = pickedFile.path;
+      });
     }
   }
 }

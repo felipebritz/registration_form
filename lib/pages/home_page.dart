@@ -1,5 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:registration_form/intra/db_sqlite.dart';
+import 'package:registration_form/infra/db_sqlite.dart';
 import 'package:registration_form/models/user.dart';
 import 'package:registration_form/pages/registration_page.dart';
 import 'package:registration_form/repositories/user_repository.dart';
@@ -63,7 +65,19 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           return Card(
             child: ListTile(
-              leading: Icon(Icons.person),
+              // leading: listUsers[index].image == null ? Icon(Icons.person) : FileImage(File(listUsers[index].image)),
+              leading: CircleAvatar(
+                  backgroundImage: listUsers[index].image != null
+                      ? FileImage(File(listUsers[index].image))
+                      : null,
+                  backgroundColor:
+                      listUsers[index].image == null ? Colors.grey[300] : null,
+                  child: listUsers[index].image == null
+                      ? Icon(
+                          Icons.person,
+                          color: Colors.grey,
+                        )
+                      : null),
               title: Text(listUsers[index].name),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

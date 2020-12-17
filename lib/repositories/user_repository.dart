@@ -1,4 +1,4 @@
-import 'package:registration_form/intra/db_sqlite.dart';
+import 'package:registration_form/infra/db_sqlite.dart';
 import 'package:registration_form/models/user.dart';
 
 class UserRepository {
