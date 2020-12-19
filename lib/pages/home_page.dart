@@ -26,6 +26,18 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<bool> _confirmDismiss(int index) async {
+    var deleteConfirmation = await _deleteConfirmationDialog(listUsers[index]);
+    if (deleteConfirmation) {
+      var deleted = await repository.delete(listUsers[index]);
+      if (deleted) {
+        listUsers.removeAt(index);
+      }
+      return deleted;
+    }
+    return false;
+  }
+
   Future<bool> _deleteConfirmationDialog(User user) async {
     return showDialog<bool>(
       context: context,
@@ -63,53 +75,67 @@ class _HomePageState extends State<HomePage> {
         padding: EdgeInsets.all(10),
         itemCount: listUsers.length,
         itemBuilder: (context, index) {
-          return Card(
-            child: ListTile(
-              // leading: listUsers[index].image == null ? Icon(Icons.person) : FileImage(File(listUsers[index].image)),
-              leading: CircleAvatar(
-                  backgroundImage: listUsers[index].image != null
-                      ? FileImage(File(listUsers[index].image))
-                      : null,
-                  backgroundColor:
-                      listUsers[index].image == null ? Colors.grey[300] : null,
-                  child: listUsers[index].image == null
-                      ? Icon(
-                          Icons.person,
-                          color: Colors.grey,
-                        )
-                      : null),
-              title: Text(listUsers[index].name),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('CPF: ${listUsers[index].cpf}'),
-                  Text('E-mail: ${listUsers[index].email}'),
-                ],
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RegistrationPage(
-                      user: listUsers[index],
+          return Dismissible(
+            key: Key(listUsers[index].id.toString()),
+            direction: DismissDirection.startToEnd,
+            background: Container(
+              color: Colors.red,
+              child: Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete,
+                      color: Colors.white,
                     ),
-                  ),
-                ).then((value) {
-                  setState(() {});
-                });
-              },
-              onLongPress: () {
-                _deleteConfirmationDialog(listUsers[index]).then((value) async {
-                  if (value != null && value) {
-                    var deleted = await repository.delete(listUsers[index]);
-                    if (deleted > 0) {
-                      setState(() {
-                        listUsers.removeAt(index);
-                      });
-                    }
-                  }
-                });
-              },
+                    SizedBox(width: 10),
+                    Text(
+                      'Deletar',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            confirmDismiss: (_) {
+              return _confirmDismiss(index);
+            },
+            child: Card(
+              child: ListTile(
+                leading: CircleAvatar(
+                    backgroundImage: listUsers[index].image != null
+                        ? FileImage(File(listUsers[index].image))
+                        : null,
+                    backgroundColor: listUsers[index].image == null
+                        ? Colors.grey[300]
+                        : null,
+                    child: listUsers[index].image == null
+                        ? Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                          )
+                        : null),
+                title: Text(listUsers[index].name),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('CPF: ${listUsers[index].cpf}'),
+                    Text('E-mail: ${listUsers[index].email}'),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RegistrationPage(
+                        user: listUsers[index],
+                      ),
+                    ),
+                  ).then((value) {
+                    setState(() {});
+                  });
+                },
+              ),
             ),
           );
         },

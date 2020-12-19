@@ -33,12 +33,16 @@ class UserRepository {
     return idUser;
   }
 
-  Future<int> delete(User user) async {
+  Future<bool> delete(User user) async {
     var instance = await _db.instance;
-    return await instance.delete(
+    var delete = await instance.delete(
       'users',
       where: 'id = ?',
       whereArgs: [user.id],
     );
+    if(delete>0){
+      return true;
+    }
+    return false;
   }
 }
